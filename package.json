@@ -1,0 +1,12 @@
+{
+  "name": "sunum-oylamasi",
+  "version": "1.0.0",
+  "description": "6 grup için canlı jüri sunum oylama ve TV skor takip sistemi",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun --watch run server.ts",
+    "test": "bun test"
+  }
+}

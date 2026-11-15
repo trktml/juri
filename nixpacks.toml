@@ -1,0 +1,12 @@
+[variables]
+HOST = "0.0.0.0"
+
+[phases.setup]
+nixPkgs = ["bun"]
+nixOverlays = []
+
+[phases.install]
+cmds = ["bun --version"]
+
+[start]
+cmd = "bun run start"

@@ -1,0 +1,2333 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>Canlı Sunum Oylaması — Jüri &amp; TV Skor Ekranı</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #090d1a;
+  --bg-soft: #10172b;
+  --panel: #131c33;
+  --panel-2: #192441;
+  --line: rgba(148, 163, 184, 0.18);
+  --line-strong: rgba(148, 163, 184, 0.34);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --primary: #38bdf8;
+  --primary-soft: rgba(56, 189, 248, 0.15);
+  --accent: #34d399;
+  --accent-soft: rgba(52, 211, 153, 0.16);
+  --gold: #fbbf24;
+  --gold-soft: rgba(251, 191, 36, 0.16);
+  --silver: #cbd5e1;
+  --bronze: #fb923c;
+  --danger: #fb7185;
+  --danger-soft: rgba(251, 113, 133, 0.14);
+  --radius: 18px;
+  --shadow: 0 18px 45px rgba(2, 6, 23, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse 75% 45% at 15% -5%, rgba(56, 189, 248, 0.16), transparent 60%),
+    radial-gradient(ellipse 65% 45% at 90% 0%, rgba(52, 211, 153, 0.12), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(14px);
+  background: rgba(9, 13, 26, 0.85);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-inner {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #06121e;
+  font-weight: 900;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-weight: 800;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-soft);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.nav-tab {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab.active {
+  background: var(--primary);
+  color: #06121e;
+}
+
+.status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.live-pill.online {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--accent);
+}
+
+.live-pill.offline {
+  border-color: rgba(251, 113, 133, 0.4);
+  background: rgba(251, 113, 133, 0.12);
+  color: var(--danger);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.live-pill.online .live-dot {
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.45); opacity: 0.55; }
+}
+
+/* Main Layout */
+.main-content {
+  flex: 1;
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 22px 0 36px;
+}
+
+body.tv-fullscreen .topbar {
+  display: none;
+}
+
+body.tv-fullscreen .main-content {
+  width: calc(100% - 40px);
+  padding: 18px 0 20px;
+}
+
+/* Shared Components */
+.card {
+  background: linear-gradient(180deg, rgba(25, 36, 65, 0.6), rgba(19, 28, 51, 0.92));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.card-sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 11px;
+  padding: 10px 16px;
+  min-height: 42px;
+  font-weight: 750;
+  font-size: 0.92rem;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: #233258;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #0ea5e9);
+  border-color: transparent;
+  color: #06121e;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7dd3fc, var(--primary));
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent), #10b981);
+  border-color: transparent;
+  color: #051b14;
+}
+
+.btn-danger {
+  background: var(--danger-soft);
+  border-color: rgba(251, 113, 133, 0.45);
+  color: #fecdd3;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(251, 113, 133, 0.25);
+}
+
+.btn-sm {
+  min-height: 34px;
+  padding: 6px 11px;
+  font-size: 0.82rem;
+  border-radius: 9px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-stage {
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+}
+
+.badge-voted {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.badge-muted {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.input-field {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 11px;
+  padding: 11px 13px;
+  color: var(--text);
+  font-size: 0.96rem;
+}
+
+.input-field::placeholder {
+  color: #64748b;
+}
+
+/* ======================== JURY VIEW ======================== */
+.jury-layout {
+  width: min(860px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.jury-identity-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.jury-progress-box {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.jury-progress-box strong {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.stage-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.14), rgba(56, 189, 248, 0.08));
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  flex-wrap: wrap;
+}
+
+.group-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.group-btn {
+  text-align: left;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  display: grid;
+  gap: 6px;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+
+.group-btn:hover {
+  border-color: var(--line-strong);
+  background: #17213b;
+}
+
+.group-btn.selected {
+  border-color: var(--primary);
+  background: rgba(56, 189, 248, 0.14);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.group-btn.on-stage:not(.selected) {
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+.group-btn-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.group-num {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.group-btn-name {
+  font-weight: 800;
+  font-size: 0.98rem;
+  overflow-wrap: anywhere;
+}
+
+.group-btn-topic {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.criteria-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.criterion-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+
+.criterion-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.criterion-title {
+  font-weight: 800;
+  font-size: 1.02rem;
+}
+
+.criterion-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.criterion-val {
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.rating-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.score-btn {
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-weight: 850;
+  font-size: 1.15rem;
+  transition: all 0.12s ease;
+}
+
+.score-btn span {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.score-btn:hover {
+  border-color: var(--primary);
+  background: #1b2849;
+}
+
+.score-btn.active {
+  background: linear-gradient(135deg, var(--primary), #0ea5e9);
+  border-color: transparent;
+  color: #06121e;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25);
+}
+
+.score-btn.active span {
+  color: #082032;
+}
+
+.vote-footer {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vote-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.vote-preview-stat {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-size: 0.88rem;
+}
+
+.vote-preview-stat strong {
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.feedback-banner {
+  margin-top: 12px;
+  padding: 11px 14px;
+  border-radius: 11px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.feedback-banner.ok {
+  background: var(--accent-soft);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+}
+
+.feedback-banner.err {
+  background: var(--danger-soft);
+  border: 1px solid rgba(251, 113, 133, 0.45);
+  color: #fecdd3;
+}
+
+/* ======================== TV VIEW ======================== */
+.tv-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.tv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(19, 28, 51, 0.95), rgba(16, 23, 43, 0.95));
+  border: 1px solid var(--line);
+}
+
+.tv-title-group h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.5vw, 2.2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tv-subtitle {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-top: 3px;
+}
+
+.tv-metrics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tv-metric-chip {
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.tv-metric-chip strong {
+  color: var(--text);
+  font-size: 1.05rem;
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tv-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tv-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 18px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.16), rgba(52, 211, 153, 0.14));
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  font-weight: 750;
+  font-size: 1rem;
+  animation: ticker-in 0.25s ease;
+}
+
+@keyframes ticker-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.tv-card {
+  position: relative;
+  border-radius: 20px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, rgba(25, 36, 65, 0.82), rgba(14, 21, 40, 0.96));
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tv-card.rank-1 {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.11), rgba(14, 21, 40, 0.96) 45%);
+}
+
+.tv-card.rank-2 {
+  border-color: rgba(203, 213, 225, 0.45);
+}
+
+.tv-card.rank-3 {
+  border-color: rgba(251, 146, 60, 0.45);
+}
+
+.tv-card.on-stage {
+  box-shadow: 0 0 0 2px var(--gold), var(--shadow);
+}
+
+.tv-card.flash-vote {
+  animation: card-flash 1.8s ease;
+}
+
+@keyframes card-flash {
+  0% { box-shadow: 0 0 0 3px var(--accent), 0 0 34px rgba(52, 211, 153, 0.45); transform: scale(1.015); }
+  100% { box-shadow: var(--shadow); transform: scale(1); }
+}
+
+.tv-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tv-rank-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rank-medal {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+
+.rank-1 .rank-medal {
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  color: #271502;
+  border-color: transparent;
+}
+
+.rank-2 .rank-medal {
+  background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+  color: #0f172a;
+  border-color: transparent;
+}
+
+.rank-3 .rank-medal {
+  background: linear-gradient(135deg, #fed7aa, #ea580c);
+  color: #260d02;
+  border-color: transparent;
+}
+
+.tv-group-name {
+  font-size: clamp(1.15rem, 1.5vw, 1.45rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.tv-group-topic {
+  font-size: 0.84rem;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.tv-score-box {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.tv-main-score {
+  font-size: clamp(1.85rem, 2.5vw, 2.5rem);
+  font-weight: 950;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.tv-main-score span {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.tv-sub-scores {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tv-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.tv-bar-row {
+  display: grid;
+  gap: 4px;
+}
+
+.tv-bar-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tv-bar-label {
+  color: #cbd5e1;
+}
+
+.tv-bar-val {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tv-bar-track {
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.tv-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tv-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* Spotlight layout */
+.tv-spotlight-layout {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.spotlight-hero {
+  padding: 26px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, rgba(56, 189, 248, 0.14), rgba(19, 28, 51, 0.96) 50%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 20px;
+}
+
+.spotlight-hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.spotlight-hero h2 {
+  margin: 6px 0 4px;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.spotlight-big-score {
+  font-size: clamp(2.8rem, 4.5vw, 4rem);
+  font-weight: 950;
+  color: var(--accent);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.spotlight-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.spotlight-bar-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(9, 13, 26, 0.65);
+  border: 1px solid var(--line);
+}
+
+.spotlight-bar-card .tv-bar-track {
+  height: 13px;
+  margin-top: 8px;
+}
+
+.spotlight-sidebar {
+  display: grid;
+  gap: 10px;
+}
+
+.mini-rank-row {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.mini-rank-row.active {
+  border-color: var(--gold);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+/* ======================== MANAGEMENT VIEW ======================== */
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.admin-full {
+  grid-column: 1 / -1;
+}
+
+.url-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.url-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.url-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+  color: var(--primary);
+  overflow-wrap: anywhere;
+}
+
+.stage-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stage-select-btn {
+  padding: 10px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-soft);
+  font-weight: 750;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.stage-select-btn.active {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.groups-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.group-edit-item {
+  padding: 12px;
+  border-radius: 13px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.matrix-table th,
+.matrix-table td {
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.matrix-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cell-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-breakdown {
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .tv-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tv-spotlight-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .jury-identity-row,
+  .admin-grid,
+  .groups-edit-grid,
+  .spotlight-bars {
+    grid-template-columns: 1fr;
+  }
+  .group-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tv-grid {
+    grid-template-columns: 1fr;
+  }
+  .nav-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .nav-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 6px;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .group-picker-grid {
+    grid-template-columns: 1fr;
+  }
+  .rating-row {
+    gap: 5px;
+  }
+  .score-btn {
+    min-height: 48px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">★</div>
+        <div>
+          <div class="brand-title">Canlı Sunum Oylaması</div>
+          <div class="brand-sub">6 Grup · 4 Kriter · Anlık TV Takibi</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Görünümler">
+        <button type="button" class="nav-tab" data-view="juri">Jüri Oylaması</button>
+        <button type="button" class="nav-tab" data-view="tv">Canlı TV Ekranı</button>
+        <button type="button" class="nav-tab" data-view="yonetim">Yönetim</button>
+      </nav>
+
+      <div class="status-wrap">
+        <span id="live-pill" class="live-pill offline">
+          <span class="live-dot"></span>
+          <span id="live-text">Bağlanıyor</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="main-content">
+    <div class="card">Yükleniyor...</div>
+  </main>
+</div>
+
+<script>
+"use strict";
+
+const SCORE_HINTS = {
+  1: "Zayıf",
+  2: "Gelişmeli",
+  3: "Orta",
+  4: "İyi",
+  5: "Çok İyi",
+};
+
+const stateStore = {
+  appState: null,
+  currentView: detectInitialView(),
+  wsConnected: false,
+  selectedGroupId: 1,
+  juryName: localStorage.getItem("sunum_jury_name") || "",
+  draftScores: { bilgi: 0, sunum: 0, emek: 0, malzeme: 0 },
+  juryDirty: false,
+  submittingVote: false,
+  juryFeedback: null,
+  groupFormDraft: null,
+  groupFormDirty: false,
+  adminFeedback: null,
+  confirmReset: false,
+  lastTicker: null,
+  flashGroups: new Map(),
+  copiedKey: "",
+};
+
+let ws = null;
+let reconnectTimer = null;
+let tickerTimer = null;
+
+function detectInitialView() {
+  const path = window.location.pathname.replace(/\/+$/, "");
+  if (path === "/tv") return "tv";
+  if (path === "/yonetim") return "yonetim";
+  if (path === "/juri") return "juri";
+  const q = new URLSearchParams(window.location.search).get("view");
+  if (q === "tv" || q === "yonetim" || q === "juri") return q;
+  return "juri";
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeJuryId(name) {
+  return String(name ?? "")
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/\s+/g, " ");
+}
+
+function formatScore(val) {
+  return Number(val || 0).toFixed(2);
+}
+
+function findJuryVote(groupId, juryName) {
+  if (!stateStore.appState || !juryName.trim()) return null;
+  const targetId = normalizeJuryId(juryName);
+  return (
+    stateStore.appState.votes.find(
+      (v) => v.groupId === groupId && v.juryId === targetId
+    ) || null
+  );
+}
+
+function syncDraftFromExistingVote() {
+  const existing = findJuryVote(stateStore.selectedGroupId, stateStore.juryName);
+  if (existing) {
+    stateStore.draftScores = {
+      bilgi: existing.bilgi,
+      sunum: existing.sunum,
+      emek: existing.emek,
+      malzeme: existing.malzeme,
+    };
+  } else {
+    stateStore.draftScores = { bilgi: 0, sunum: 0, emek: 0, malzeme: 0 };
+  }
+  stateStore.juryDirty = false;
+}
+
+function setView(view, pushUrl = true) {
+  stateStore.currentView = view;
+  if (pushUrl) {
+    const targetPath = view === "juri" ? "/juri" : view === "tv" ? "/tv" : "/yonetim";
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ view }, "", targetPath);
+    }
+  }
+  updateNavTabs();
+  render();
+}
+
+function updateNavTabs() {
+  document.querySelectorAll(".nav-tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === stateStore.currentView);
+  });
+}
+
+function updateConnectionIndicator() {
+  const pill = document.getElementById("live-pill");
+  const text = document.getElementById("live-text");
+  if (!pill || !text) return;
+  if (stateStore.wsConnected) {
+    pill.className = "live-pill online";
+    text.textContent = "CANLI";
+  } else {
+    pill.className = "live-pill offline";
+    text.textContent = "Yeniden bağlanıyor";
+  }
+}
+
+async function fetchInitialState() {
+  try {
+    const res = await fetch("/api/state", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!stateStore.appState) {
+      applyIncomingState(data, null, true);
+    }
+  } catch (err) {
+    console.error("Durum alınamadı:", err);
+  }
+}
+
+function applyIncomingState(newState, event, isInitial = false) {
+  const prevState = stateStore.appState;
+  stateStore.appState = newState;
+
+  if (isInitial) {
+    if (newState.settings.activeGroupId > 0) {
+      stateStore.selectedGroupId = newState.settings.activeGroupId;
+    }
+    syncDraftFromExistingVote();
+  } else if (!stateStore.juryDirty) {
+    syncDraftFromExistingVote();
+  }
+
+  if (!stateStore.groupFormDirty || !stateStore.groupFormDraft) {
+    stateStore.groupFormDraft = newState.groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      topic: g.topic,
+    }));
+  }
+
+  if (event && event.type === "VOTE_CAST") {
+    const actionText = event.updated ? "oyunu güncelledi" : "oy verdi";
+    stateStore.lastTicker = `${event.juryName}, ${event.groupName} için ${actionText} (${event.totalScore}/20 · Ort. ${formatScore(event.avgScore)})`;
+    stateStore.flashGroups.set(event.groupId, Date.now() + 2000);
+    if (tickerTimer) clearTimeout(tickerTimer);
+    tickerTimer = setTimeout(() => {
+      render();
+    }, 2200);
+  } else if (event && event.type === "RESET") {
+    stateStore.lastTicker = "Tüm oylar sıfırlandı. Yeni oylama bekleniyor.";
+    stateStore.draftScores = { bilgi: 0, sunum: 0, emek: 0, malzeme: 0 };
+    stateStore.juryDirty = false;
+  } else if (event && event.type === "DEMO_LOADED") {
+    stateStore.lastTicker = "Örnek demo jüri oyları yüklendi.";
+  }
+
+  // If currently editing an input inside jury or admin, avoid replacing active text inputs unnecessarily
+  if (prevState && isTypingInTextInput()) {
+    updateLiveCountersOnly();
+    return;
+  }
+
+  render();
+}
+
+function isTypingInTextInput() {
+  const el = document.activeElement;
+  if (!el) return false;
+  return el.tagName === "INPUT" && (el.type === "text" || el.type === "search");
+}
+
+function updateLiveCountersOnly() {
+  const s = stateStore.appState;
+  if (!s) return;
+  const votedIds = getVotedGroupIdsForCurrentJury();
+  const progEl = document.getElementById("jury-progress-count");
+  if (progEl) progEl.textContent = `${votedIds.size} / 6`;
+}
+
+function getVotedGroupIdsForCurrentJury() {
+  const set = new Set();
+  if (!stateStore.appState || !stateStore.juryName.trim()) return set;
+  const targetId = normalizeJuryId(stateStore.juryName);
+  for (const v of stateStore.appState.votes) {
+    if (v.juryId === targetId) set.add(v.groupId);
+  }
+  return set;
+}
+
+function connectWebSocket() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const url = `${proto}//${window.location.host}/ws`;
+
+  try {
+    ws = new WebSocket(url);
+  } catch {
+    scheduleReconnect();
+    return;
+  }
+
+  ws.addEventListener("open", () => {
+    stateStore.wsConnected = true;
+    updateConnectionIndicator();
+  });
+
+  ws.addEventListener("message", (msg) => {
+    try {
+      const payload = JSON.parse(msg.data);
+      if (payload && payload.type === "STATE_UPDATE" && payload.state) {
+        applyIncomingState(payload.state, payload.event || null, !stateStore.appState);
+      }
+    } catch {
+      // ignore non-json pong
+    }
+  });
+
+  ws.addEventListener("close", () => {
+    stateStore.wsConnected = false;
+    updateConnectionIndicator();
+    scheduleReconnect();
+  });
+
+  ws.addEventListener("error", () => {
+    stateStore.wsConnected = false;
+    updateConnectionIndicator();
+  });
+}
+
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connectWebSocket();
+  }, 2000);
+}
+
+async function apiRequest(url, method, body) {
+  const res = await fetch(url, {
+    method,
+    headers: { "content-type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "İşlem başarısız oldu.");
+  }
+  if (data.state) {
+    applyIncomingState(data.state, data.event || null, false);
+  }
+  return data;
+}
+
+function render() {
+  updateNavTabs();
+  updateConnectionIndicator();
+  const root = document.getElementById("app");
+  if (!root) return;
+
+  if (!stateStore.appState) {
+    root.innerHTML = `<div class="card">Sunucuya bağlanılıyor...</div>`;
+    return;
+  }
+
+  if (stateStore.currentView === "tv") {
+    root.innerHTML = renderTvView(stateStore.appState);
+    bindTvHandlers();
+    return;
+  }
+
+  if (stateStore.currentView === "yonetim") {
+    root.innerHTML = renderAdminView(stateStore.appState);
+    bindAdminHandlers();
+    return;
+  }
+
+  root.innerHTML = renderJuryView(stateStore.appState);
+  bindJuryHandlers();
+}
+
+/* ==================== JURY VIEW RENDER & EVENTS ==================== */
+function renderJuryView(s) {
+  const votedIds = getVotedGroupIdsForCurrentJury();
+  const selectedGroup =
+    s.groups.find((g) => g.id === stateStore.selectedGroupId) || s.groups[0];
+  const activeStageGroup =
+    s.settings.activeGroupId > 0
+      ? s.groups.find((g) => g.id === s.settings.activeGroupId)
+      : null;
+
+  const existingVote = findJuryVote(selectedGroup.id, stateStore.juryName);
+  const scores = stateStore.draftScores;
+  const allFilled =
+    scores.bilgi >= 1 && scores.sunum >= 1 && scores.emek >= 1 && scores.malzeme >= 1;
+  const totalPreview = scores.bilgi + scores.sunum + scores.emek + scores.malzeme;
+  const avgPreview = allFilled ? (totalPreview / 4).toFixed(2) : "—";
+
+  const stageBanner = activeStageGroup
+    ? `<div class="stage-callout">
+         <div>
+           <span class="badge badge-stage">Şu An Sahnede</span>
+           <strong style="margin-left:8px">${escapeHtml(activeStageGroup.name)}</strong>
+           ${activeStageGroup.topic ? `<span style="color:var(--muted);margin-left:6px">· ${escapeHtml(activeStageGroup.topic)}</span>` : ""}
+         </div>
+         ${
+           activeStageGroup.id !== selectedGroup.id
+             ? `<button type="button" class="btn btn-sm btn-primary" id="jump-stage-btn" data-group-id="${activeStageGroup.id}">Sahnedeki Grubu Seç</button>`
+             : `<span class="badge badge-voted">Seçili Grup</span>`
+         }
+       </div>`
+    : "";
+
+  const groupCards = s.groups
+    .map((g) => {
+      const isSelected = g.id === selectedGroup.id;
+      const isOnStage = g.id === s.settings.activeGroupId;
+      const voteForGroup = findJuryVote(g.id, stateStore.juryName);
+      return `
+        <button
+          type="button"
+          class="group-btn ${isSelected ? "selected" : ""} ${isOnStage ? "on-stage" : ""}"
+          data-select-group="${g.id}"
+        >
+          <div class="group-btn-top">
+            <span class="group-num">${g.id}. Ekip</span>
+            ${
+              isOnStage
+                ? `<span class="badge badge-stage">Sahnede</span>`
+                : voteForGroup
+                  ? `<span class="badge badge-voted">✓ ${voteForGroup.totalScore}/20</span>`
+                  : `<span class="badge badge-muted">Bekliyor</span>`
+            }
+          </div>
+          <div class="group-btn-name">${escapeHtml(g.name)}</div>
+          ${g.topic ? `<div class="group-btn-topic">${escapeHtml(g.topic)}</div>` : ""}
+        </button>
+      `;
+    })
+    .join("");
+
+  const criteriaHtml = s.criteria
+    .map((c, idx) => {
+      const currentVal = scores[c.key] || 0;
+      const buttons = [1, 2, 3, 4, 5]
+        .map(
+          (val) => `
+          <button
+            type="button"
+            class="score-btn ${currentVal === val ? "active" : ""}"
+            data-criterion="${c.key}"
+            data-score="${val}"
+            aria-pressed="${currentVal === val}"
+          >
+            ${val}
+            <span>${SCORE_HINTS[val]}</span>
+          </button>
+        `
+        )
+        .join("");
+
+      return `
+        <div class="criterion-card">
+          <div class="criterion-head">
+            <div>
+              <div class="criterion-title">${idx + 1}. ${escapeHtml(c.label)}</div>
+              <div class="criterion-desc">${escapeHtml(c.description)}</div>
+            </div>
+            <div class="criterion-val">${currentVal > 0 ? `${currentVal} / 5` : "Seçilmedi"}</div>
+          </div>
+          <div class="rating-row">${buttons}</div>
+        </div>
+      `;
+    })
+    .join("");
+
+  const feedbackHtml = stateStore.juryFeedback
+    ? `<div class="feedback-banner ${stateStore.juryFeedback.type}">${escapeHtml(stateStore.juryFeedback.text)}</div>`
+    : "";
+
+  return `
+    <div class="jury-layout">
+      <section class="card">
+        <div class="jury-identity-row">
+          <div>
+            <label class="field-label" for="jury-name-input">Jüri Adı Soyadı</label>
+            <input
+              id="jury-name-input"
+              class="input-field"
+              type="text"
+              maxlength="60"
+              placeholder="Örn: Dr. Ali Yılmaz"
+              value="${escapeHtml(stateStore.juryName)}"
+              autocomplete="name"
+            >
+          </div>
+          <div class="jury-progress-box">
+            Oylanan Grup: <strong id="jury-progress-count">${votedIds.size} / 6</strong>
+          </div>
+        </div>
+      </section>
+
+      ${stageBanner}
+
+      <section class="card">
+        <h2 class="card-title">1. Puanlanacak Grubu Seçin</h2>
+        <p class="card-sub">Her grup sunumunu tamamladıkça seçip 5 üzerinden puanlayabilirsiniz. Daha önce verdiğiniz oyları istediğiniz zaman güncelleyebilirsiniz.</p>
+        <div class="group-picker-grid">${groupCards}</div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 class="card-title">2. Değerlendirme — ${escapeHtml(selectedGroup.name)}</h2>
+            <p class="card-sub">
+              ${selectedGroup.topic ? `${escapeHtml(selectedGroup.topic)} · ` : ""}
+              4 kriteri 1 (en düşük) ile 5 (en yüksek) arasında puanlayın.
+            </p>
+          </div>
+          ${
+            existingVote
+              ? `<span class="badge badge-voted">Kayıtlı Oyunuz Var (${existingVote.totalScore}/20)</span>`
+              : `<span class="badge badge-muted">Henüz Oylanmadı</span>`
+          }
+        </div>
+
+        <div class="criteria-list">${criteriaHtml}</div>
+
+        <div class="vote-footer">
+          <div class="vote-preview">
+            <div class="vote-preview-stat">Toplam: <strong>${totalPreview} / 20</strong></div>
+            <div class="vote-preview-stat">Ortalama: <strong>${avgPreview} / 5</strong></div>
+          </div>
+          <button
+            type="button"
+            class="btn ${existingVote ? "btn-accent" : "btn-primary"}"
+            id="submit-vote-btn"
+            ${stateStore.submittingVote ? "disabled" : ""}
+          >
+            ${
+              stateStore.submittingVote
+                ? "Kaydediliyor..."
+                : existingVote
+                  ? "Oyu Güncelle"
+                  : "Oyu Canlı Gönder"
+            }
+          </button>
+        </div>
+        ${feedbackHtml}
+      </section>
+    </div>
+  `;
+}
+
+function bindJuryHandlers() {
+  const nameInput = document.getElementById("jury-name-input");
+  if (nameInput) {
+    nameInput.addEventListener("input", (e) => {
+      stateStore.juryName = e.target.value;
+      localStorage.setItem("sunum_jury_name", stateStore.juryName);
+      stateStore.juryFeedback = null;
+      if (!stateStore.juryDirty) {
+        syncDraftFromExistingVote();
+      }
+      updateLiveCountersOnly();
+    });
+    nameInput.addEventListener("blur", () => {
+      if (!stateStore.juryDirty) {
+        syncDraftFromExistingVote();
+      }
+      render();
+    });
+  }
+
+  const jumpBtn = document.getElementById("jump-stage-btn");
+  if (jumpBtn) {
+    jumpBtn.addEventListener("click", () => {
+      stateStore.selectedGroupId = Number(jumpBtn.dataset.groupId);
+      stateStore.juryFeedback = null;
+      syncDraftFromExistingVote();
+      render();
+    });
+  }
+
+  document.querySelectorAll("[data-select-group]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      stateStore.selectedGroupId = Number(btn.dataset.selectGroup);
+      stateStore.juryFeedback = null;
+      syncDraftFromExistingVote();
+      render();
+    });
+  });
+
+  document.querySelectorAll(".score-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const criterion = btn.dataset.criterion;
+      const val = Number(btn.dataset.score);
+      stateStore.draftScores[criterion] = val;
+      stateStore.juryDirty = true;
+      stateStore.juryFeedback = null;
+      render();
+    });
+  });
+
+  const submitBtn = document.getElementById("submit-vote-btn");
+  if (submitBtn) {
+    submitBtn.addEventListener("click", handleVoteSubmit);
+  }
+}
+
+async function handleVoteSubmit() {
+  const cleanName = stateStore.juryName.trim();
+  if (!cleanName) {
+    stateStore.juryFeedback = {
+      type: "err",
+      text: "Lütfen oy göndermeden önce Jüri Adı Soyadı alanını doldurun.",
+    };
+    render();
+    document.getElementById("jury-name-input")?.focus();
+    return;
+  }
+
+  const { bilgi, sunum, emek, malzeme } = stateStore.draftScores;
+  if (bilgi < 1 || sunum < 1 || emek < 1 || malzeme < 1) {
+    stateStore.juryFeedback = {
+      type: "err",
+      text: "Lütfen 4 kriterin tamamı için 1 ile 5 arasında puan seçin.",
+    };
+    render();
+    return;
+  }
+
+  stateStore.submittingVote = true;
+  stateStore.juryFeedback = null;
+  render();
+
+  try {
+    const res = await apiRequest("/api/vote", "POST", {
+      juryName: cleanName,
+      groupId: stateStore.selectedGroupId,
+      bilgi,
+      sunum,
+      emek,
+      malzeme,
+    });
+    stateStore.juryDirty = false;
+    stateStore.juryFeedback = {
+      type: "ok",
+      text: `${res.event.groupName} için puanınız canlı olarak TV ekranına yansıtıldı (${res.event.totalScore}/20).`,
+    };
+  } catch (err) {
+    stateStore.juryFeedback = {
+      type: "err",
+      text: err.message,
+    };
+  } finally {
+    stateStore.submittingVote = false;
+    render();
+  }
+}
+
+/* ==================== TV VIEW RENDER & EVENTS ==================== */
+function renderTvView(s) {
+  const activeGroup =
+    s.settings.activeGroupId > 0
+      ? s.groups.find((g) => g.id === s.settings.activeGroupId)
+      : null;
+
+  const isFullscreen = Boolean(document.fullscreenElement);
+  const tickerHtml = stateStore.lastTicker
+    ? `<div class="tv-ticker">
+         <span>🔔 ${escapeHtml(stateStore.lastTicker)}</span>
+         <span style="font-size:0.82rem;color:var(--muted)">Gerçek Zamanlı Akış</span>
+       </div>`
+    : "";
+
+  const headerHtml = `
+    <div class="tv-header">
+      <div class="tv-title-group">
+        <h1>
+          Canlı Skor Tablosu
+          ${
+            activeGroup
+              ? `<span class="badge badge-stage" style="font-size:0.82rem;padding:5px 12px">Sahnede: ${escapeHtml(activeGroup.name)}</span>`
+              : ""
+          }
+        </h1>
+        <div class="tv-subtitle">
+          Değerlendirme: Bilgilerin yeterliliği · Sunum becerisi · Hazırlanma emeği · Malzeme kalitesi (5 üzerinden)
+        </div>
+      </div>
+
+      <div class="tv-metrics">
+        <div class="tv-metric-chip">Jüri: <strong>${s.stats.uniqueJuries}</strong></div>
+        <div class="tv-metric-chip">Toplam Oy: <strong>${s.stats.totalVotes}</strong></div>
+        <div class="tv-metric-chip">Oylanan Grup: <strong>${s.stats.groupsWithVotes}/6</strong></div>
+      </div>
+
+      <div class="tv-controls">
+        <button type="button" class="btn btn-sm" id="tv-toggle-sort">
+          Sıralama: ${s.settings.sortMode === "average" ? "Ortalama (5)" : "Toplam Puan"}
+        </button>
+        <button type="button" class="btn btn-sm" id="tv-toggle-mode">
+          Görünüm: ${s.settings.tvMode === "spotlight" ? "Sahne Odağı" : "6 Grup Tablo"}
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" id="tv-fullscreen-btn">
+          ${isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran"}
+        </button>
+      </div>
+    </div>
+  `;
+
+  if (s.settings.tvMode === "spotlight") {
+    const heroGroup = activeGroup || s.leaderboard[0];
+    const heroRankText = heroGroup.rank > 0 ? `${heroGroup.rank}. Sıra` : "Oylama Bekleniyor";
+
+    const heroBars = s.criteria
+      .map((c) => {
+        const val = heroGroup.criteriaAvg[c.key] || 0;
+        const pct = Math.min(100, Math.max(0, (val / 5) * 100));
+        return `
+          <div class="spotlight-bar-card">
+            <div class="tv-bar-label-row" style="font-size:1rem">
+              <span class="tv-bar-label">${escapeHtml(c.label)}</span>
+              <span class="tv-bar-val">${formatScore(val)} / 5</span>
+            </div>
+            <div class="tv-bar-track">
+              <div class="tv-bar-fill" style="width:${pct}%"></div>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    const sidebarRows = s.leaderboard
+      .map((g) => {
+        const rankLabel = g.rank > 0 ? `#${g.rank}` : "—";
+        const scoreVal =
+          s.settings.sortMode === "total"
+            ? `${g.totalPoints} puan`
+            : `${formatScore(g.avgOutOf5)} / 5`;
+        return `
+          <div class="mini-rank-row ${g.id === heroGroup.id ? "active" : ""}">
+            <div class="rank-medal" style="width:36px;height:36px;font-size:0.95rem">${rankLabel}</div>
+            <div style="min-width:0">
+              <div style="font-weight:800;overflow-wrap:anywhere">${escapeHtml(g.name)}</div>
+              <div style="font-size:0.78rem;color:var(--muted)">${g.voteCount} jüri · Ort. ${formatScore(g.avgOutOf20)}/20</div>
+            </div>
+            <div style="font-weight:900;font-size:1.1rem;color:var(--accent);font-variant-numeric:tabular-nums">
+              ${scoreVal}
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="tv-layout">
+        ${headerHtml}
+        ${tickerHtml}
+        <div class="tv-spotlight-layout">
+          <div class="spotlight-hero">
+            <div class="spotlight-hero-top">
+              <div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  ${
+                    heroGroup.id === s.settings.activeGroupId
+                      ? `<span class="badge badge-stage">Şu An Sahnede</span>`
+                      : ""
+                  }
+                  <span class="badge badge-muted">${heroRankText}</span>
+                  <span class="badge badge-voted">${heroGroup.voteCount} Jüri Oyu</span>
+                </div>
+                <h2>${escapeHtml(heroGroup.name)}</h2>
+                ${heroGroup.topic ? `<div style="color:var(--muted);font-size:1.05rem">${escapeHtml(heroGroup.topic)}</div>` : ""}
+              </div>
+
+              <div class="tv-score-box">
+                <div class="spotlight-big-score">
+                  ${
+                    s.settings.sortMode === "total"
+                      ? `${heroGroup.totalPoints} <span style="font-size:1.2rem;color:var(--muted)">puan</span>`
+                      : `${formatScore(heroGroup.avgOutOf5)} <span style="font-size:1.3rem;color:var(--muted)">/ 5</span>`
+                  }
+                </div>
+                <div class="tv-sub-scores" style="font-size:0.98rem">
+                  20 Üzerinden: ${formatScore(heroGroup.avgOutOf20)} · Toplam: ${heroGroup.totalPoints} puan
+                </div>
+              </div>
+            </div>
+
+            <div class="spotlight-bars">${heroBars}</div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom:12px">Canlı Genel Sıralama</h3>
+            <div class="spotlight-sidebar">${sidebarRows}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const now = Date.now();
+  const cardsHtml = s.leaderboard
+    .map((g) => {
+      const rankClass = g.rank >= 1 && g.rank <= 3 ? `rank-${g.rank}` : "";
+      const onStage = g.id === s.settings.activeGroupId;
+      const flashUntil = stateStore.flashGroups.get(g.id) || 0;
+      const isFlashing = flashUntil > now;
+      const rankText = g.rank > 0 ? `${g.rank}` : "—";
+
+      const mainScoreHtml =
+        s.settings.sortMode === "total"
+          ? `${g.totalPoints}<span> puan</span>`
+          : `${formatScore(g.avgOutOf5)}<span> / 5</span>`;
+
+      const barsHtml = s.criteria
+        .map((c) => {
+          const val = g.criteriaAvg[c.key] || 0;
+          const pct = Math.min(100, Math.max(0, (val / 5) * 100));
+          return `
+            <div class="tv-bar-row">
+              <div class="tv-bar-label-row">
+                <span class="tv-bar-label">${escapeHtml(c.shortLabel)}</span>
+                <span class="tv-bar-val">${g.voteCount > 0 ? formatScore(val) : "—"}</span>
+              </div>
+              <div class="tv-bar-track">
+                <div class="tv-bar-fill" style="width:${pct}%"></div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return `
+        <article class="tv-card ${rankClass} ${onStage ? "on-stage" : ""} ${isFlashing ? "flash-vote" : ""}">
+          <div class="tv-card-head">
+            <div class="tv-rank-name">
+              <div class="rank-medal">${rankText}</div>
+              <div style="min-width:0">
+                <div class="tv-group-name">${escapeHtml(g.name)}</div>
+                ${
+                  g.topic
+                    ? `<div class="tv-group-topic">${escapeHtml(g.topic)}</div>`
+                    : `<div class="tv-group-topic">${g.id}. Sunum Ekibi</div>`
+                }
+              </div>
+            </div>
+
+            <div class="tv-score-box">
+              <div class="tv-main-score">${mainScoreHtml}</div>
+              <div class="tv-sub-scores">
+                Ort: ${formatScore(g.avgOutOf20)}/20 · Top: ${g.totalPoints}
+              </div>
+            </div>
+          </div>
+
+          <div class="tv-bars">${barsHtml}</div>
+
+          <div class="tv-card-foot">
+            <span>${g.voteCount} Jüri Değerlendirdi</span>
+            ${
+              onStage
+                ? `<span class="badge badge-stage">Şu An Sahnede</span>`
+                : g.voteCount > 0
+                  ? `<span style="color:var(--accent)">Ortalama: ${formatScore(g.avgOutOf5)} / 5</span>`
+                  : `<span>Puan bekleniyor</span>`
+            }
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="tv-layout">
+      ${headerHtml}
+      ${tickerHtml}
+      <section class="tv-grid">${cardsHtml}</section>
+    </div>
+  `;
+}
+
+function bindTvHandlers() {
+  const sortBtn = document.getElementById("tv-toggle-sort");
+  if (sortBtn) {
+    sortBtn.addEventListener("click", async () => {
+      const next = stateStore.appState.settings.sortMode === "average" ? "total" : "average";
+      await apiRequest("/api/settings", "PUT", { sortMode: next });
+    });
+  }
+
+  const modeBtn = document.getElementById("tv-toggle-mode");
+  if (modeBtn) {
+    modeBtn.addEventListener("click", async () => {
+      const next =
+        stateStore.appState.settings.tvMode === "leaderboard" ? "spotlight" : "leaderboard";
+      await apiRequest("/api/settings", "PUT", { tvMode: next });
+    });
+  }
+
+  const fsBtn = document.getElementById("tv-fullscreen-btn");
+  if (fsBtn) {
+    fsBtn.addEventListener("click", async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch (err) {
+        console.warn("Tam ekran açılamadı:", err);
+      }
+    });
+  }
+}
+
+/* ==================== ADMIN / MANAGEMENT VIEW ==================== */
+function renderAdminView(s) {
+  const origin = window.location.origin;
+  const isLoopback =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const primaryBase =
+    isLoopback && s.network.urls && s.network.urls.length > 0 ? s.network.urls[0] : origin;
+
+  const shareLinks = [
+    { key: "juri", label: "Jüri Oylama Linki (Telefon / Tablet)", url: `${primaryBase}/juri` },
+    { key: "tv", label: "Canlı TV Skor Linki", url: `${primaryBase}/tv` },
+    ...(isLoopback
+      ? [{ key: "local", label: "Yerel Bilgisayar Linki", url: `${origin}/tv` }]
+      : []),
+  ];
+
+  const linksHtml = shareLinks
+    .map(
+      (item) => `
+      <div class="url-row">
+        <div>
+          <div style="font-size:0.78rem;color:var(--muted);font-weight:700">${escapeHtml(item.label)}</div>
+          <div class="url-code">${escapeHtml(item.url)}</div>
+        </div>
+        <button type="button" class="btn btn-sm" data-copy-url="${escapeHtml(item.url)}" data-copy-key="${item.key}">
+          ${stateStore.copiedKey === item.key ? "Kopyalandı ✓" : "Kopyala"}
+        </button>
+      </div>
+    `
+    )
+    .join("");
+
+  const stageButtonsHtml = `
+    <button type="button" class="stage-select-btn ${s.settings.activeGroupId === 0 ? "active" : ""}" data-stage-id="0">
+      Serbest / Yok
+    </button>
+    ${s.groups
+      .map(
+        (g) => `
+        <button type="button" class="stage-select-btn ${s.settings.activeGroupId === g.id ? "active" : ""}" data-stage-id="${g.id}">
+          ${g.id}. ${escapeHtml(g.name)}
+        </button>
+      `
+      )
+      .join("")}
+  `;
+
+  const draftGroups =
+    stateStore.groupFormDraft ||
+    s.groups.map((g) => ({ id: g.id, name: g.name, topic: g.topic }));
+
+  const groupsFormHtml = draftGroups
+    .map(
+      (g) => `
+      <div class="group-edit-item">
+        <div style="font-size:0.8rem;font-weight:800;color:var(--primary)">${g.id}. GRUP</div>
+        <div>
+          <label class="field-label" for="g-name-${g.id}">Grup Adı</label>
+          <input
+            id="g-name-${g.id}"
+            class="input-field"
+            type="text"
+            maxlength="60"
+            data-group-name="${g.id}"
+            value="${escapeHtml(g.name)}"
+          >
+        </div>
+        <div>
+          <label class="field-label" for="g-topic-${g.id}">Sunum Konusu (İsteğe Bağlı)</label>
+          <input
+            id="g-topic-${g.id}"
+            class="input-field"
+            type="text"
+            maxlength="120"
+            placeholder="Örn: Yenilenebilir Enerji"
+            data-group-topic="${g.id}"
+            value="${escapeHtml(g.topic)}"
+          >
+        </div>
+      </div>
+    `
+    )
+    .join("");
+
+  const voteMap = new Map();
+  for (const v of s.votes) {
+    voteMap.set(`${v.juryId}:${v.groupId}`, v);
+  }
+
+  const matrixBodyHtml =
+    s.juries.length === 0
+      ? `<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:22px">Henüz hiç jüri oyu kaydedilmedi.</td></tr>`
+      : s.juries
+          .map((j) => {
+            const cells = s.groups
+              .map((g) => {
+                const v = voteMap.get(`${j.juryId}:${g.id}`);
+                if (!v) return `<td style="color:#475569">—</td>`;
+                return `
+                  <td>
+                    <span class="cell-score">
+                      ${v.totalScore}/20
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-danger"
+                        style="min-height:24px;padding:2px 6px;font-size:0.72rem"
+                        title="Bu oyu sil"
+                        data-del-jury="${escapeHtml(j.juryId)}"
+                        data-del-group="${g.id}"
+                      >×</button>
+                    </span>
+                    <span class="cell-breakdown">B:${v.bilgi} S:${v.sunum} E:${v.emek} M:${v.malzeme}</span>
+                  </td>
+                `;
+              })
+              .join("");
+
+            return `
+              <tr>
+                <td><strong>${escapeHtml(j.juryName)}</strong></td>
+                ${cells}
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-danger"
+                    data-del-jury="${escapeHtml(j.juryId)}"
+                    data-del-group=""
+                  >Jüriyi Sil</button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+
+  const adminBanner = stateStore.adminFeedback
+    ? `<div class="feedback-banner ${stateStore.adminFeedback.type}" style="margin-bottom:14px">${escapeHtml(stateStore.adminFeedback.text)}</div>`
+    : "";
+
+  return `
+    ${adminBanner}
+    <div class="admin-grid">
+      <section class="card">
+        <h2 class="card-title">Jüri &amp; TV Bağlantı Adresleri</h2>
+        <p class="card-sub">Jüriler aynı Wi-Fi ağından telefonlarıyla aşağıdaki jüri linkine girerek canlı oy verebilir.</p>
+        <div class="url-list">${linksHtml}</div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Sahne &amp; TV Yayın Kontrolü</h2>
+        <p class="card-sub">Şu an sunum yapan grubu seçtiğinizde TV ekranında ve jüri telefonlarında öne çıkar.</p>
+        <div class="stage-btn-grid">${stageButtonsHtml}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+          <button type="button" class="btn btn-sm" id="admin-sort-btn">
+            TV Sıralaması: ${s.settings.sortMode === "average" ? "Ortalama Puan" : "Toplam Puan"}
+          </button>
+          <button type="button" class="btn btn-sm" id="admin-tvmode-btn">
+            TV Modu: ${s.settings.tvMode === "spotlight" ? "Sahne Odağı" : "6 Grup Tablo"}
+          </button>
+        </div>
+      </section>
+
+      <section class="card admin-full">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 class="card-title">6 Grup Adı ve Sunum Konuları</h2>
+            <p class="card-sub">Değişiklikleri kaydettiğinizde tüm açık ekranlarda anında güncellenir.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="save-groups-btn">Grup Bilgilerini Kaydet</button>
+        </div>
+        <div class="groups-edit-grid">${groupsFormHtml}</div>
+      </section>
+
+      <section class="card admin-full">
+        <h2 class="card-title">Jüri × Grup Puan Matrisi (Canlı Denetim)</h2>
+        <p class="card-sub">Kısaltmalar: B = Bilgilerin yeterliliği, S = Sunum becerisi, E = Hazırlanma emeği, M = Malzeme kalitesi</p>
+        <div class="table-wrap">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>Jüri Üyesi</th>
+                ${s.groups.map((g) => `<th>${escapeHtml(g.name)}</th>`).join("")}
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody>${matrixBodyHtml}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card admin-full">
+        <div class="danger-zone">
+          <div>
+            <h2 class="card-title">Test ve Sıfırlama Araçları</h2>
+            <p class="card-sub">Sunum öncesi TV ekranını denemek için örnek veri yükleyebilir, yarışma başında oyları sıfırlayabilirsiniz.</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button type="button" class="btn" id="load-demo-btn">Örnek Demo Oyları Yükle</button>
+            ${
+              stateStore.confirmReset
+                ? `<button type="button" class="btn btn-danger" id="confirm-reset-btn">Emin misiniz? Tüm Oyları Sil</button>
+                   <button type="button" class="btn" id="cancel-reset-btn">Vazgeç</button>`
+                : `<button type="button" class="btn btn-danger" id="ask-reset-btn">Tüm Oyları Sıfırla</button>`
+            }
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function bindAdminHandlers() {
+  document.querySelectorAll("[data-copy-url]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const url = btn.dataset.copyUrl;
+      const key = btn.dataset.copyKey;
+      try {
+        await navigator.clipboard.writeText(url);
+        stateStore.copiedKey = key;
+        render();
+        setTimeout(() => {
+          stateStore.copiedKey = "";
+          render();
+        }, 1800);
+      } catch {
+        stateStore.adminFeedback = { type: "err", text: `Kopyalanamadı: ${url}` };
+        render();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-stage-id]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const activeGroupId = Number(btn.dataset.stageId);
+      await apiRequest("/api/settings", "PUT", { activeGroupId });
+    });
+  });
+
+  const adminSortBtn = document.getElementById("admin-sort-btn");
+  if (adminSortBtn) {
+    adminSortBtn.addEventListener("click", async () => {
+      const next = stateStore.appState.settings.sortMode === "average" ? "total" : "average";
+      await apiRequest("/api/settings", "PUT", { sortMode: next });
+    });
+  }
+
+  const adminTvModeBtn = document.getElementById("admin-tvmode-btn");
+  if (adminTvModeBtn) {
+    adminTvModeBtn.addEventListener("click", async () => {
+      const next =
+        stateStore.appState.settings.tvMode === "leaderboard" ? "spotlight" : "leaderboard";
+      await apiRequest("/api/settings", "PUT", { tvMode: next });
+    });
+  }
+
+  document.querySelectorAll("[data-group-name]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = Number(input.dataset.groupName);
+      stateStore.groupFormDirty = true;
+      const item = stateStore.groupFormDraft.find((g) => g.id === id);
+      if (item) item.name = input.value;
+    });
+  });
+
+  document.querySelectorAll("[data-group-topic]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = Number(input.dataset.groupTopic);
+      stateStore.groupFormDirty = true;
+      const item = stateStore.groupFormDraft.find((g) => g.id === id);
+      if (item) item.topic = input.value;
+    });
+  });
+
+  const saveGroupsBtn = document.getElementById("save-groups-btn");
+  if (saveGroupsBtn) {
+    saveGroupsBtn.addEventListener("click", async () => {
+      try {
+        await apiRequest("/api/groups", "PUT", { groups: stateStore.groupFormDraft });
+        stateStore.groupFormDirty = false;
+        stateStore.adminFeedback = { type: "ok", text: "Grup isimleri ve konuları kaydedildi." };
+      } catch (err) {
+        stateStore.adminFeedback = { type: "err", text: err.message };
+      }
+      render();
+    });
+  }
+
+  document.querySelectorAll("[data-del-jury]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const juryId = btn.dataset.delJury;
+      const groupId = btn.dataset.delGroup;
+      const qs = groupId
+        ? `?juryId=${encodeURIComponent(juryId)}&groupId=${encodeURIComponent(groupId)}`
+        : `?juryId=${encodeURIComponent(juryId)}`;
+      await apiRequest(`/api/vote${qs}`, "DELETE");
+    });
+  });
+
+  const demoBtn = document.getElementById("load-demo-btn");
+  if (demoBtn) {
+    demoBtn.addEventListener("click", async () => {
+      await apiRequest("/api/demo", "POST");
+      stateStore.adminFeedback = { type: "ok", text: "Örnek demo verileri yüklendi." };
+      render();
+    });
+  }
+
+  const askResetBtn = document.getElementById("ask-reset-btn");
+  if (askResetBtn) {
+    askResetBtn.addEventListener("click", () => {
+      stateStore.confirmReset = true;
+      render();
+    });
+  }
+
+  const cancelResetBtn = document.getElementById("cancel-reset-btn");
+  if (cancelResetBtn) {
+    cancelResetBtn.addEventListener("click", () => {
+      stateStore.confirmReset = false;
+      render();
+    });
+  }
+
+  const confirmResetBtn = document.getElementById("confirm-reset-btn");
+  if (confirmResetBtn) {
+    confirmResetBtn.addEventListener("click", async () => {
+      await apiRequest("/api/reset", "POST");
+      stateStore.confirmReset = false;
+      stateStore.adminFeedback = { type: "ok", text: "Tüm oylar sıfırlandı." };
+      render();
+    });
+  }
+}
+
+/* ==================== GLOBAL INIT ==================== */
+document.querySelectorAll(".nav-tab").forEach((btn) => {
+  btn.addEventListener("click", () => setView(btn.dataset.view, true));
+});
+
+window.addEventListener("popstate", () => {
+  stateStore.currentView = detectInitialView();
+  render();
+});
+
+document.addEventListener("fullscreenchange", () => {
+  document.body.classList.toggle("tv-fullscreen", Boolean(document.fullscreenElement));
+  render();
+});
+
+fetchInitialState();
+connectWebSocket();
+</script>
+</body>
+</html>
